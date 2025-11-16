@@ -1,0 +1,95 @@
+import pika, os, json, time, logging
+
+from src.basemodels import SendMailRequest
+
+logger = logging.getLogger(__name__)
+
+class RabbitMQConsumer:
+    def __init__(self):
+        if "RABBITMQ_HOST" in os.environ:
+            self.host = os.environ["RABBITMQ_HOST"]
+        else:
+            self.host = "localhost"
+        logger.info(f"RabbitMQ host set to: {self.host}")
+
+        if "RABBITMQ_PORT" in os.environ:
+            self.port = int(os.environ["RABBITMQ_PORT"])
+        else:
+            self.port = 5672
+        logger.info(f"RabbitMQ port set to: {self.port}")
+
+        if "RABBITMQ_MAIL_QUEUE_NAME" in os.environ:
+            self.mail_queue_name = os.environ["RABBITMQ_MAIL_QUEUE_NAME"]
+            logger.info(f"RabbitMQ queue name set from env: {self.mail_queue_name}")
+        else:
+            raise ValueError("RABBITMQ_MAIL_QUEUE_NAME environment variable is required")
+
+        if "RABBITMQ_USERNAME" in os.environ:
+            self.username = os.environ["RABBITMQ_USERNAME"]
+            logger.info(f"RabbitMQ username set to: {self.username}")
+        else:
+            raise ValueError("RABBITMQ_USERNAME environment variable is required")
+        
+        if "RABBITMQ_PASSWORD" in os.environ:
+            self.password = os.environ["RABBITMQ_PASSWORD"]
+            logger.info(f"RabbitMQ password set from env")
+        else:
+            raise ValueError("RABBITMQ_PASSWORD environment variable is required")
+
+        # Connect to RabbitMQ with retry logic
+        _connection = self._connect_with_retry()
+
+        _channel = _connection.channel()
+        _channel.queue_declare(queue=self.queue_name)
+        _channel.basic_qos(prefetch_count=1)
+
+        _channel.basic_consume(
+            queue=self.queue_name, 
+            on_message_callback=self.callback
+            )
+        
+        logger.info('Waiting for messages...')
+        _channel.start_consuming()
+
+
+    def _connect_with_retry(self, max_retries=10, retry_delay=5):
+        """Connect to RabbitMQ with retry logic for container startup"""
+        credentials = pika.PlainCredentials(self.username, self.password)
+        parameters = pika.ConnectionParameters(
+            host=self.host,
+            port=self.port,
+            credentials=credentials,
+            heartbeat=600,
+            blocked_connection_timeout=300
+        )
+        
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Attempting to connect to RabbitMQ at {self.host}:{self.port} (attempt {attempt + 1}/{max_retries})")
+                connection = pika.BlockingConnection(parameters)
+                logger.info(f"Successfully connected to RabbitMQ")
+                return connection
+            except pika.exceptions.AMQPConnectionError as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"Connection failed: {e}. Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                else:
+                    logger.error(f"Failed to connect to RabbitMQ after {max_retries} attempts")
+                    raise
+
+
+    @staticmethod
+    def request_json_to_dict(json_data) -> SendMailRequest:
+        data = json.loads(json_data.decode())
+        return SendMailRequest(**data)
+
+
+    def callback(self, ch, method, properties, body):
+        try:
+            request = self.request_json_to_dict(body)
+        except Exception as e:
+            logger.error(f" [!] Error parsing message: {e}")
+            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
+            return
+        logger.info(f"Received request: {request}")
+        ch.basic_ack(delivery_tag = method.delivery_tag)
