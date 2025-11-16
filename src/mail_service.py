@@ -5,7 +5,7 @@ import logging
 import os
 import smtplib
 
-from src.basemodels import *
+from src.basemodels import SendMailRequest, TemplateName, BrandingConfig, EmailChangeVerificationContent, ForgotPasswordVerificationContent, EmailVerificationContent
 
 logger = logging.getLogger(__name__)
 
@@ -191,28 +191,23 @@ class MailService:
             raise
 
 
-    def send_email_verification_mail(
-            self,
-            username: str,
-            recipient: str,
-            verification_code: str,
-            email_content: EmailVerificationContent,
-            branding_config: BrandingConfig
-            ):
+    def send_email_verification_mail(self, request: SendMailRequest):
         """Send email verification mail"""
+        template_variables = EmailVerificationContent(**request.email_content)
+
         # Convert BaseModel to dict and merge with dynamic variables
         variables = {
-            **email_content.model_dump(),
-            "username": username,
-            "verification_code": verification_code
+            **template_variables.model_dump(),
+            "username": request.username,
+            "verification_code": request.verification_code
         }
         
         self.send_email_html(
-            template_name="email_verification",
+            template_name=TemplateName.EMAIL_VERIFICATION,
             variables=variables,
-            subject="Dein Code lautet {verification_code}",
-            recipient=recipient,
-            branding_config=branding_config
+            subject=f"Dein Code lautet {request.verification_code}",
+            recipient=request.recipient,
+            branding_config=request.branding_config
         )
 
 

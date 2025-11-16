@@ -1,6 +1,7 @@
 import pika, os, json, time, logging
 
-from src.basemodels import SendMailRequest
+from src.basemodels import SendMailRequest, TemplateName
+from src.mail_service import MailService
 
 logger = logging.getLogger(__name__)
 
@@ -35,16 +36,18 @@ class RabbitMQConsumer:
             logger.info(f"RabbitMQ password set from env")
         else:
             raise ValueError("RABBITMQ_PASSWORD environment variable is required")
+        
+        self.mail_service = MailService()
 
         # Connect to RabbitMQ with retry logic
         _connection = self._connect_with_retry()
 
         _channel = _connection.channel()
-        _channel.queue_declare(queue=self.queue_name)
+        _channel.queue_declare(queue=self.mail_queue_name, durable=True)
         _channel.basic_qos(prefetch_count=1)
 
         _channel.basic_consume(
-            queue=self.queue_name, 
+            queue=self.mail_queue_name, 
             on_message_callback=self.callback
             )
         
@@ -84,12 +87,22 @@ class RabbitMQConsumer:
         return SendMailRequest(**data)
 
 
+    def handle_request(self, request: SendMailRequest):
+        # Placeholder for handling the mail sending logic
+        logger.info(f"Handling mail request for {request.recipient} using template {request.template_name}")
+        logger.info(f"Request details: {request}")
+        if request.template_name == TemplateName.EMAIL_VERIFICATION:
+            logger.info("Processing email verification template")
+            self.mail_service.send_email_verification_mail(request)
+
+
     def callback(self, ch, method, properties, body):
         try:
             request = self.request_json_to_dict(body)
+            self.handle_request(request)
         except Exception as e:
             logger.error(f" [!] Error parsing message: {e}")
+            # ch.basic_nack(delivery_tag=method.delivery_tag) TODO: after developing use this instead of reject
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
             return
-        logger.info(f"Received request: {request}")
         ch.basic_ack(delivery_tag = method.delivery_tag)
