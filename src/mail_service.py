@@ -172,6 +172,7 @@ class MailService:
             logger.error(f"Parameters: host={self.host}, port={self.port}, user={self.user}")
             raise RuntimeError(error_message) from e
 
+
     def send_email_plain_text(self, content, subject, recipient: str):
         """Send plain text email (backward compatibility)"""
         try:
@@ -189,13 +190,13 @@ class MailService:
             logger.error(f"Failed to create or send plain text email: {e}")
             raise
 
+
     def send_email_verification_mail(
             self,
             username: str,
             recipient: str,
             verification_code: str,
             email_content: EmailVerificationContent,
-            subject: str,
             branding_config: BrandingConfig
             ):
         """Send email verification mail"""
@@ -209,10 +210,11 @@ class MailService:
         self.send_email_html(
             template_name="email_verification",
             variables=variables,
-            subject=subject,
+            subject="Dein Code lautet {verification_code}",
             recipient=recipient,
             branding_config=branding_config
         )
+
 
     def send_email_change_verification_mail(
             self,
