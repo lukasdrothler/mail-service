@@ -1,4 +1,4 @@
-from rmq_consumer import RabbitMQConsumer
+from src.rmq_consumer import RabbitMQConsumer
 
 import logging, os
 
