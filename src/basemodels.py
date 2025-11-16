@@ -8,7 +8,7 @@ class EmailVerificationContent(BaseModel):
     welcome_title: Optional[str] = "Welcome {username}! 🎉"
     welcome_message: Optional[str] = "Thanks for your interest in my app! I'm excited to have you on board. Please verify your email with the code below to unlock all the amazing features."
     verification_code_label: Optional[str] = "Your Verification Code"
-    expiration_message: Optional[str] = "This code will expire in 15 minutes."
+    expiration_message: Optional[str] = "This code will expire in 24 hours."
     feature_preview_title: Optional[str] = "🎯 What awaits you:"
     feature_1: Optional[str] = "✨ Powerful tool designed for your success"
     feature_2: Optional[str] = "🔐 Bank-level security for your peace of mind"
