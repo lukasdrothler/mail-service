@@ -102,6 +102,15 @@ class RabbitMQConsumer:
         if request.template_name == TemplateName.EMAIL_VERIFICATION:
             logger.info("Processing email verification template")
             self.mail_service.send_email_verification_mail(request)
+        elif request.template_name == TemplateName.EMAIL_CHANGE_VERIFICATION:
+            logger.info("Processing email change verification template")
+            self.mail_service.send_email_change_verification_mail(request)
+        elif request.template_name == TemplateName.FORGOT_PASSWORD_VERIFICATION:
+            logger.info("Processing forgot password verification template")
+            self.mail_service.send_forgot_password_verification_mail(request)
+        else:
+            logger.error(f"Unknown template name: {request.template_name}")
+            pass
 
 
     def callback(self, ch, method, properties, body):

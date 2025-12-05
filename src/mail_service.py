@@ -228,52 +228,40 @@ class MailService:
         )
 
 
-    def send_email_change_verification_mail(
-            self,
-            username: str,
-            recipient: str,
-            verification_code: str,
-            email_content: EmailChangeVerificationContent,
-            subject: str,
-            branding_config: BrandingConfig
-            ):
+    def send_email_change_verification_mail(self, request: SendMailRequest):
         """Send email change verification mail"""
+        template_variables = EmailChangeVerificationContent(**request.email_content)
+
         # Convert BaseModel to dict and merge with dynamic variables
         variables = {
-            **email_content.model_dump(),
-            "username": username,
-            "verification_code": verification_code
+            **template_variables.model_dump(),
+            "username": request.username,
+            "verification_code": request.verification_code
         }
         
         self.send_email_html(
-            template_name="email_change_verification",
+            template_name=TemplateName.EMAIL_CHANGE_VERIFICATION,
             variables=variables,
-            subject=subject,
-            recipient=recipient,
-            branding_config=branding_config
+            subject=template_variables.title or "Email Change Verification",
+            recipient=request.recipient,
+            branding_config=request.branding_config
         )
 
-    def send_forgot_password_verification_mail(
-            self,
-            username: str,
-            recipient: str,
-            verification_code: str,
-            email_content: ForgotPasswordVerificationContent,
-            subject: str,
-            branding_config: BrandingConfig
-            ):
+    def send_forgot_password_verification_mail(self, request: SendMailRequest):
         """Send forgot password verification mail"""
+        template_variables = ForgotPasswordVerificationContent(**request.email_content)
+
         # Convert BaseModel to dict and merge with dynamic variables
         variables = {
-            **email_content.model_dump(),
-            "username": username,
-            "verification_code": verification_code
+            **template_variables.model_dump(),
+            "username": request.username,
+            "verification_code": request.verification_code
         }
         
         self.send_email_html(
-            template_name="forgot_password_verification",
+            template_name=TemplateName.FORGOT_PASSWORD_VERIFICATION,
             variables=variables,
-            subject=subject,
-            recipient=recipient,
-            branding_config=branding_config
+            subject=template_variables.title or "Password Reset Request",
+            recipient=request.recipient,
+            branding_config=request.branding_config
         )
