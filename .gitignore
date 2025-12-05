@@ -50,3 +50,4 @@ logs/
 .pytest_cache/
 .coverage
 htmlcov/
+sample_mail_request.json
