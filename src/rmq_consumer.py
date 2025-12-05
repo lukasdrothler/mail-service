@@ -50,7 +50,27 @@ class RabbitMQConsumer:
         self._connection = self._connect_with_retry()
 
         self._channel = self._connection.channel()
-        self._channel.queue_declare(queue=self.mail_queue_name, durable=True)
+        
+        # Setup Dead Letter Exchange (DLX) and Queue (DLQ)
+        dlx_name = f"{self.mail_queue_name}_dlx"
+        dlq_name = f"{self.mail_queue_name}_dlq"
+        
+        # Declare DLX (Fanout type broadcasts to all bound queues)
+        self._channel.exchange_declare(exchange=dlx_name, exchange_type='fanout', durable=True)
+        
+        # Declare DLQ
+        self._channel.queue_declare(queue=dlq_name, durable=True)
+        
+        # Bind DLQ to DLX
+        self._channel.queue_bind(exchange=dlx_name, queue=dlq_name)
+        
+        # Declare main queue with DLX configuration
+        # Messages rejected with requeue=False will be sent to the DLX
+        queue_args = {
+            'x-dead-letter-exchange': dlx_name
+        }
+        
+        self._channel.queue_declare(queue=self.mail_queue_name, durable=True, arguments=queue_args)
         self._channel.basic_qos(prefetch_count=1)
 
     def start(self):
@@ -115,11 +135,14 @@ class RabbitMQConsumer:
 
     def callback(self, ch, method, properties, body):
         try:
+            logger.info(f"Received message: {method.delivery_tag}")
             request = self.request_json_to_dict(body)
             self.handle_request(request)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            logger.info(f"Successfully processed message: {method.delivery_tag}")
         except Exception as e:
-            logger.error(f" [!] Error parsing message: {e}")
-            # ch.basic_nack(delivery_tag=method.delivery_tag) TODO: after developing use this instead of reject
+            logger.error(f"Error processing message {method.delivery_tag}: {e}")
+            # Rejecting with requeue=False sends the message to the configured Dead Letter Exchange (DLX)
+            # This prevents infinite loops for bad messages while preserving them in the DLQ for inspection
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
-            return
-        ch.basic_ack(delivery_tag = method.delivery_tag)
+            logger.warning(f"Message {method.delivery_tag} sent to Dead Letter Queue")
