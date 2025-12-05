@@ -1,0 +1,51 @@
+import pytest
+import os
+from unittest.mock import patch, MagicMock
+from src.mail_service import MailService
+from src.rmq_consumer import RabbitMQConsumer
+from testcontainers.rabbitmq import RabbitMqContainer
+
+@pytest.fixture(scope="session")
+def mail_service():
+    """Fixture for MailService with mocked environment variables."""
+    with patch.dict(os.environ, {
+        "SMTP_SERVER": "localhost",
+        "SMTP_PORT": "587",
+        "SMTP_USER": "test_user",
+        "SMTP_PASSWORD": "test_password"
+    }):
+        return MailService()
+
+@pytest.fixture(scope="session")
+def rabbitmq_server():
+    """Fixture to provide a RabbitMQ server (container or existing)."""
+    if os.getenv("RABBITMQ_HOST"):
+        yield None
+    else:
+        with RabbitMqContainer("rabbitmq:4.2") as rabbitmq:
+            yield rabbitmq
+
+@pytest.fixture(scope="session")
+def rmq_consumer(mail_service, rabbitmq_server):
+    """Fixture for RabbitMQConsumer with real connection."""
+    env_vars = {}
+    
+    if rabbitmq_server:
+        env_vars = {
+            "RABBITMQ_HOST": rabbitmq_server.get_container_host_ip(),
+            "RABBITMQ_PORT": str(rabbitmq_server.get_exposed_port(5672)),
+            "RABBITMQ_MAIL_QUEUE_NAME": "test_queue",
+            "RABBITMQ_USERNAME": "guest",
+            "RABBITMQ_PASSWORD": "guest"
+        }
+    else:
+        # Fallback defaults if not provided by environment
+        if "RABBITMQ_MAIL_QUEUE_NAME" not in os.environ:
+            env_vars["RABBITMQ_MAIL_QUEUE_NAME"] = "test_queue"
+        if "RABBITMQ_USERNAME" not in os.environ:
+            env_vars["RABBITMQ_USERNAME"] = "test_user"
+        if "RABBITMQ_PASSWORD" not in os.environ:
+            env_vars["RABBITMQ_PASSWORD"] = "test_password"
+    
+    with patch.dict(os.environ, env_vars):
+        return RabbitMQConsumer(mail_service)

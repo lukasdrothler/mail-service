@@ -6,7 +6,7 @@ from src.mail_service import MailService
 logger = logging.getLogger(__name__)
 
 class RabbitMQConsumer:
-    def __init__(self):
+    def __init__(self, mail_service: MailService):
         if "RABBITMQ_HOST" in os.environ:
             self.host = os.environ["RABBITMQ_HOST"]
         else:
@@ -44,22 +44,23 @@ class RabbitMQConsumer:
         else:
             raise ValueError("RABBITMQ_PASSWORD environment variable is required")
         
-        self.mail_service = MailService()
+        self.mail_service = mail_service
 
         # Connect to RabbitMQ with retry logic
-        _connection = self._connect_with_retry()
+        self._connection = self._connect_with_retry()
 
-        _channel = _connection.channel()
-        _channel.queue_declare(queue=self.mail_queue_name, durable=True)
-        _channel.basic_qos(prefetch_count=1)
+        self._channel = self._connection.channel()
+        self._channel.queue_declare(queue=self.mail_queue_name, durable=True)
+        self._channel.basic_qos(prefetch_count=1)
 
-        _channel.basic_consume(
+    def start(self):
+        self._channel.basic_consume(
             queue=self.mail_queue_name, 
             on_message_callback=self.callback
             )
         
         logger.info('Waiting for messages...')
-        _channel.start_consuming()
+        self._channel.start_consuming()
 
 
     def _connect_with_retry(self, max_retries=10, retry_delay=5):

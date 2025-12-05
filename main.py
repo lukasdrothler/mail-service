@@ -1,4 +1,5 @@
 from src.rmq_consumer import RabbitMQConsumer
+from src.mail_service import MailService
 
 import logging, os
 
@@ -25,4 +26,6 @@ logging.basicConfig(
 )
 
 if __name__ == '__main__':
-    RabbitMQConsumer()
+    mail_service = MailService()
+    consumer = RabbitMQConsumer(mail_service)
+    consumer.start()
