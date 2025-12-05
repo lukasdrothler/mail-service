@@ -33,7 +33,7 @@ def rabbitmq_server():
 def rmq_consumer(mail_service, rabbitmq_server):
     """Fixture for RabbitMQConsumer with real connection."""
     env_vars = {}
-    
+
     if rabbitmq_server:
         env_vars = {
             "RABBITMQ_HOST": rabbitmq_server.get_container_host_ip(),
