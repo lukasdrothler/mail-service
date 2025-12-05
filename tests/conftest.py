@@ -1,6 +1,5 @@
 import pytest
 import os
-from unittest.mock import patch, MagicMock
 from src.mail_service import MailService
 from src.rmq_consumer import RabbitMQConsumer
 from testcontainers.rabbitmq import RabbitMqContainer
@@ -8,13 +7,18 @@ from testcontainers.rabbitmq import RabbitMqContainer
 @pytest.fixture(scope="session")
 def mail_service():
     """Fixture for MailService with mocked environment variables."""
-    with patch.dict(os.environ, {
+    old_environ = os.environ.copy()
+    os.environ.update({
         "SMTP_SERVER": "localhost",
         "SMTP_PORT": "587",
         "SMTP_USER": "test_user",
         "SMTP_PASSWORD": "test_password"
-    }):
+    })
+    try:
         return MailService()
+    finally:
+        os.environ.clear()
+        os.environ.update(old_environ)
 
 @pytest.fixture(scope="session")
 def rabbitmq_server():
@@ -47,5 +51,10 @@ def rmq_consumer(mail_service, rabbitmq_server):
         if "RABBITMQ_PASSWORD" not in os.environ:
             env_vars["RABBITMQ_PASSWORD"] = "test_password"
     
-    with patch.dict(os.environ, env_vars):
+    old_environ = os.environ.copy()
+    os.environ.update(env_vars)
+    try:
         return RabbitMQConsumer(mail_service)
+    finally:
+        os.environ.clear()
+        os.environ.update(old_environ)

@@ -41,19 +41,23 @@ class MailService:
             raise ValueError("SMTP_PASSWORD environment variable is required for email sending")
 
     
-    def _process_variable_references(self, variables: Dict[str, Any], max_iterations: int = 3) -> Dict[str, Any]:
+    def process_variable_references(self, variables: Dict[str, Any], max_iterations: int = 3, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Process variable references within variables (e.g., {app_name} in text)"""
         processed_variables = variables.copy()
         
         for iteration in range(max_iterations):
             changes_made = False
             
+            # Create lookup dictionary combining context and current variables
+            lookup_vars = context.copy() if context else {}
+            lookup_vars.update(processed_variables)
+            
             for key, value in processed_variables.items():
                 if isinstance(value, str):
                     original_value = value
                     
                     # Replace all variable references in this string
-                    for var_key, var_value in processed_variables.items():
+                    for var_key, var_value in lookup_vars.items():
                         if var_key != key:  # Don't replace self-references
                             placeholder = f"{{{var_key}}}"
                             if placeholder in value:
@@ -64,7 +68,7 @@ class MailService:
                         changes_made = True
                 elif isinstance(value, dict):
                     # Recursively process nested dictionaries
-                    processed_nested = self._process_variable_references(value, max_iterations=1)
+                    processed_nested = self.process_variable_references(value, max_iterations=1, context=lookup_vars)
                     if processed_nested != value:
                         processed_variables[key] = processed_nested
                         changes_made = True
@@ -76,7 +80,7 @@ class MailService:
         return processed_variables
 
 
-    def _load_template(self, template_name: str) -> Optional[str]:
+    def load_template(self, template_name: str) -> Optional[str]:
         """Load an HTML template file"""
         if "EMAIL_TEMPLATES_DIR" in os.environ:
             _templates_dir = os.environ["EMAIL_TEMPLATES_DIR"]
@@ -100,7 +104,7 @@ class MailService:
             return None
 
 
-    def _render_template(
+    def render_template(
             self, template_content: str, variables: Dict[str, Any], branding_config: BrandingConfig
             ) -> str:
         """Render template with variables and configuration"""
@@ -108,7 +112,7 @@ class MailService:
         all_variables = {**branding_config.model_dump(), **variables}
         
         # Process variable references within the merged variables (multiple passes if needed)
-        all_variables = self._process_variable_references(all_variables)
+        all_variables = self.process_variable_references(all_variables)
         
         # Replace all variables in the template
         for key, value in all_variables.items():
@@ -128,11 +132,11 @@ class MailService:
         """Send email using template system"""
         
         # Load HTML template
-        template_content = self._load_template(template_name)
+        template_content = self.load_template(template_name)
         if not template_content:
             raise ValueError(f"Template '{template_name}' not found")
 
-        html_content = self._render_template(
+        html_content = self.render_template(
             template_content=template_content,
             variables=variables,
             branding_config=branding_config
