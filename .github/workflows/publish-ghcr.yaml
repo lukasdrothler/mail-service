@@ -77,25 +77,25 @@ jobs:
           token: ${{ secrets.GITOPS_PAT }}
           path: finyed/overlays/dev
 
-      # - name: Update Image Tag
-      #   run: |
-      #     # Navigate to the directory containing kustomization.yaml
-      #     cd finyed/overlays/dev
+      - name: Update Image Tag
+        run: |
+          # Navigate to the directory containing kustomization.yaml
+          cd finyed/overlays/dev
           
-      #     # Update the image tag using sed
-      #     sed -i '/name: ghcr.io\/lukasdrothler\/mail-service/,/newTag:/ s|newTag: .*|newTag: ${{ github.sha }}|' finyed/overlays/dev/kustomization.yaml
+          # Update the image tag using sed
+          sed -i '/name: ghcr.io\/lukasdrothler\/mail-service/,/newTag:/ s|newTag: .*|newTag: ${{ github.sha }}|' finyed/overlays/dev/kustomization.yaml
 
-      # - name: Commit and Push Changes
-      #   run: |
-      #     cd finyed/overlays/dev
-      #     git config user.name "github-actions[bot]"
-      #     git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Commit and Push Changes
+        run: |
+          cd finyed/overlays/dev
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           
-      #     # Check if there are changes before committing
-      #     if [[ -n $(git status -s) ]]; then
-      #       git add .
-      #       git commit -m "update: mail-service image tag to ${{ github.sha }}"
-      #       git push
-      #     else
-      #       echo "No changes to commit"
-      #     fi
+          # Check if there are changes before committing
+          if [[ -n $(git status -s) ]]; then
+            git add .
+            git commit -m "update: mail-service image tag to ${{ github.sha }}"
+            git push
+          else
+            echo "No changes to commit"
+          fi
