@@ -6,7 +6,7 @@ from src.mail_service import MailService
 logger = logging.getLogger(__name__)
 
 class RabbitMQConsumer:
-    def __init__(self, mail_service: MailService):
+    def __init__(self, mail_service: MailService, dry_run: bool = False):
         if "RABBITMQ_HOST" in os.environ:
             self.host = os.environ["RABBITMQ_HOST"]
         else:
@@ -45,6 +45,7 @@ class RabbitMQConsumer:
             raise ValueError("RABBITMQ_PASSWORD environment variable is required")
         
         self.mail_service = mail_service
+        self.dry_run = dry_run
 
         # Connect to RabbitMQ with retry logic
         self._connection = self._connect_with_retry()
@@ -82,6 +83,11 @@ class RabbitMQConsumer:
         logger.info('Waiting for messages...')
         self._channel.start_consuming()
 
+    def stop(self):
+        """Stop the consumer gracefully"""
+        if self._connection and self._connection.is_open:
+            logger.info("Stopping consumer...")
+            self._connection.add_callback_threadsafe(self._channel.stop_consuming)
 
     def _connect_with_retry(self, max_retries=10, retry_delay=5):
         """Connect to RabbitMQ with retry logic for container startup"""
@@ -119,6 +125,7 @@ class RabbitMQConsumer:
         # Placeholder for handling the mail sending logic
         logger.info(f"Handling mail request for {request.recipient} using template {request.template_name}")
         logger.info(f"Request details: {request}")
+
         if request.template_name == TemplateName.EMAIL_VERIFICATION:
             logger.info("Processing email verification template")
             self.mail_service.send_email_verification_mail(request)

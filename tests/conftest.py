@@ -4,7 +4,7 @@ from src.mail_service import MailService
 from src.rmq_consumer import RabbitMQConsumer
 from testcontainers.rabbitmq import RabbitMqContainer
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def mail_service():
     """Fixture for MailService with mocked environment variables."""
     old_environ = os.environ.copy()
@@ -29,7 +29,7 @@ def rabbitmq_server():
         with RabbitMqContainer("rabbitmq:4.2") as rabbitmq:
             yield rabbitmq
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def rmq_consumer(mail_service, rabbitmq_server):
     """Fixture for RabbitMQConsumer with real connection."""
     env_vars = {}
@@ -54,7 +54,7 @@ def rmq_consumer(mail_service, rabbitmq_server):
     old_environ = os.environ.copy()
     os.environ.update(env_vars)
     try:
-        return RabbitMQConsumer(mail_service)
+        return RabbitMQConsumer(mail_service, dry_run=True)
     finally:
         os.environ.clear()
         os.environ.update(old_environ)

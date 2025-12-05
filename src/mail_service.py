@@ -159,9 +159,12 @@ class MailService:
         return None
 
     def _send_message(
-            self, msg, recipient: str,
+            self, msg, recipient: str
             ) -> None:
         """Send prepared email message"""
+        if self.dry_run:
+            logger.info(f"Dry run enabled - not sending email to {recipient}")
+            return
         try:
             # Create SMTP connection
             logger.info(f"Connecting to SMTP server at {self.host}:{self.port}...")
