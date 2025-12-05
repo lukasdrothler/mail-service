@@ -1,4 +1,4 @@
-import pika, os, json, time, logging
+import pika, os, json, time, logging, socket
 
 from src.basemodels import SendMailRequest, TemplateName
 from src.mail_service import MailService
@@ -11,7 +11,14 @@ class RabbitMQConsumer:
             self.host = os.environ["RABBITMQ_HOST"]
         else:
             self.host = "localhost"
-        logger.info(f"RabbitMQ host set to: {self.host}")
+        
+        # Resolve and log IP for debugging
+        try:
+            resolved_ip = socket.gethostbyname(self.host)
+            logger.info(f"RabbitMQ host set to: {self.host} (Resolved IP: {resolved_ip})")
+        except Exception as e:
+            logger.error(f"Failed to resolve RabbitMQ host {self.host}: {e}")
+            resolved_ip = "unknown"
 
         if "RABBITMQ_PORT" in os.environ:
             self.port = int(os.environ["RABBITMQ_PORT"])

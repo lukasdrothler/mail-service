@@ -160,11 +160,24 @@ class MailService:
         """Send prepared email message"""
         try:
             # Create SMTP connection
+            logger.info(f"Connecting to SMTP server at {self.host}:{self.port}...")
             server = smtplib.SMTP(host=self.host, port=self.port)
             server.starttls()
             server.login(self.user, self.password)
             server.sendmail(self.user, [recipient], msg.as_string())
             server.quit()
+            logger.info(f"Successfully sent email to {recipient}")
+            
+        except OSError as e:
+            if e.errno == 101: # Network is unreachable
+                logger.critical(f"NETWORK ERROR: Cannot reach SMTP server {self.host}:{self.port}. "
+                                f"Check Kubernetes egress policies or DNS settings. Error: {e}")
+            elif e.errno == 111: # Connection refused
+                logger.critical(f"CONNECTION REFUSED: SMTP server {self.host}:{self.port} refused connection. "
+                                f"Check if the server is running and port is correct. Error: {e}")
+            else:
+                logger.error(f"OS Error during email sending: {e}")
+            raise RuntimeError(f"Network/OS error sending email to {recipient}: {e}") from e
             
         except Exception as e:
             error_message = f"Failed to send email to {recipient}: {e}"
