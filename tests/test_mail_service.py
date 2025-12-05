@@ -157,3 +157,53 @@ def test_render_forgot_password_verification_template(mail_service):
     assert "TestApp" in rendered
     assert "{{" not in rendered
     assert "}}" not in rendered
+
+def test_render_template_missing_variables(mail_service):
+    # Test that missing variables result in unrendered placeholders
+    template_content = "<p>Hello {{username}}, your code is {{code}}</p>"
+    variables = {
+        "username": "TestUser"
+        # code is missing
+    }
+    branding_config = BrandingConfig(
+        app_name="TestApp",
+        app_owner="Owner",
+        contact_email="test@example.com"
+    )
+    
+    rendered = mail_service.render_template(template_content, variables, branding_config)
+    
+    assert "Hello TestUser" in rendered
+    assert "{{code}}" in rendered  # Should remain unrendered
+
+def test_process_variable_references_circular(mail_service):
+    # Test circular dependency handling
+    variables = {
+        "a": "{b}",
+        "b": "{a}"
+    }
+    
+    # Should not hang infinitely, but stop after max_iterations
+    processed = mail_service.process_variable_references(variables, max_iterations=3)
+    
+    # Depending on implementation, it might be partially resolved or remain as is
+    # In the current implementation, it will swap back and forth or stay same
+    # We just want to ensure it returns and doesn't crash
+    assert isinstance(processed, dict)
+
+def test_send_email_html_missing_template(mail_service):
+    # Test sending email with non-existent template
+    branding_config = BrandingConfig(
+        app_name="TestApp",
+        app_owner="Owner",
+        contact_email="test@example.com"
+    )
+    
+    with pytest.raises(ValueError, match="Template 'non_existent_template' not found"):
+        mail_service.send_email_html(
+            template_name="non_existent_template",
+            variables={},
+            subject="Test",
+            recipient="test@example.com",
+            branding_config=branding_config
+        )
