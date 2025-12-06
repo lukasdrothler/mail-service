@@ -44,7 +44,7 @@ jobs:
           bandit -c bandit.yaml -r .
 
   build-and-push:
-    needs: test
+    needs: test sast-scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
