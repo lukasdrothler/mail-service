@@ -73,12 +73,16 @@ jobs:
         with:
           command: quickview
           image: ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker Scout CVEs
         uses: docker/scout-action@v1
         with:
           command: cves
           image: ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Docker image with 'latest' tag
         run: |
