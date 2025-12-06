@@ -63,9 +63,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
           docker build -t ghcr.io/${{ github.repository_owner }}/mail-service:latest -t ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }} .
+
+      - name: Docker scout scan
+        run: |
+          docker scout quickview
+          docker scout cves
+
+      - name: Push Docker image
+        run: |
           docker push ghcr.io/${{ github.repository_owner }}/mail-service:latest
           docker push ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
 
