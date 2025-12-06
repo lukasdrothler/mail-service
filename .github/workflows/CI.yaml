@@ -67,20 +67,16 @@ jobs:
         run: |
           docker build -t ghcr.io/${{ github.repository_owner }}/mail-service:latest -t ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }} .
           docker push ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
-
-      - name: Run Docker scout scan
-        uses: docker/scout-action@v1
-        with:
-          command: quickview, cves
-          image: ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
-          registry-user: ${{ github.actor }}
-          registry-password: ${{ secrets.GITHUB_TOKEN }}
-          only-severities: "critical,high"
-
-      - name: Push Docker image latest tag
-        run: |
           docker push ghcr.io/${{ github.repository_owner }}/mail-service:latest
-          
+
+      # - name: Run Docker scout scan
+      #   uses: docker/scout-action@v1
+      #   with:
+      #     command: quickview, cves
+      #     image: ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
+      #     registry-user: ${{ github.actor }}
+      #     registry-password: ${{ secrets.GITHUB_TOKEN }}
+      #     only-severities: "critical,high"
 
   update-gitops:
     runs-on: ubuntu-latest
