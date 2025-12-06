@@ -74,7 +74,7 @@ jobs:
           command: quickview, cves
           image: ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
           registry-user: ${{ github.actor }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
           only-severities: "critical,high"
 
       - name: Push Docker image latest tag
