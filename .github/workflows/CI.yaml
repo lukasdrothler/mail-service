@@ -41,7 +41,7 @@ jobs:
 
       - name: Run Bandit SAST scan
         run: |
-          bandit -r .
+          bandit -c bandit.yaml -r .
 
   build-and-push:
     needs: test
