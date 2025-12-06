@@ -1,3 +1,5 @@
 exclude_dirs: ['tests']
 # tests: ['B201', 'B301']
 # skips: ['B101', 'B601']
+output_format: 'json'
+output_file: 'bandit_report.txt'
