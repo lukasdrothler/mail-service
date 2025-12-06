@@ -73,6 +73,7 @@ jobs:
         with:
           command: quickview, cves
           image: ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
+          registry-user: ${{ github.actor }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           only-severities: "critical,high"
 
