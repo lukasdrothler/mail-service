@@ -63,30 +63,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker image
+      - name: Build Docker image
         run: |
           docker build -t ghcr.io/${{ github.repository_owner }}/mail-service:latest -t ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }} .
-          docker push ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
 
-      - name: Docker Scout Quickview
-        uses: docker/scout-action@v1
-        with:
-          command: quickview
-          image: ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Docker Scout
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh
 
-      - name: Docker Scout CVEs
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          image: ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker Scout
+        run: |
+          docker scout quickview
+          docker scout cves
 
       - name: Push Docker image with 'latest' tag
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/mail-service:latest
+          docker push ghcr.io/${{ github.repository_owner }}/mail-service:${{ github.sha }}
 
   update-gitops:
     runs-on: ubuntu-latest
