@@ -18,7 +18,6 @@ class SendMailRequest(BaseModel):
     verification_code: str
     recipient: str
     branding_config: BrandingConfig
-    email_content: dict
 
 
 class TemplateName():

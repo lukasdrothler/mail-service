@@ -30,14 +30,12 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     )
     
     # 1. Email Verification
-    content_ver = {"username": "User1", "verification_code": "111111"}
     req_ver = {
         "template_name": TemplateName.EMAIL_VERIFICATION,
         "username": "User1",
         "verification_code": "111111",
         "recipient": "user1@example.com",
-        "branding_config": branding_config.model_dump(),
-        "email_content": content_ver
+        "branding_config": branding_config.model_dump()
     }
     channel.basic_publish(
         exchange='',
@@ -46,14 +44,12 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     )
     
     # 2. Email Change Verification
-    content_change = {"username": "User2", "verification_code": "222222"}
     req_change = {
         "template_name": TemplateName.EMAIL_CHANGE_VERIFICATION,
         "username": "User2",
         "verification_code": "222222",
         "recipient": "user2@example.com",
-        "branding_config": branding_config.model_dump(),
-        "email_content": content_change
+        "branding_config": branding_config.model_dump()
     }
     channel.basic_publish(
         exchange='',
@@ -62,14 +58,12 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     )
     
     # 3. Forgot Password Verification
-    content_forgot = {"username": "User3", "verification_code": "333333"}
     req_forgot = {
         "template_name": TemplateName.FORGOT_PASSWORD_VERIFICATION,
         "username": "User3",
         "verification_code": "333333",
         "recipient": "user3@example.com",
-        "branding_config": branding_config.model_dump(),
-        "email_content": content_forgot
+        "branding_config": branding_config.model_dump()
     }
     channel.basic_publish(
         exchange='',

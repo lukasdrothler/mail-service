@@ -97,10 +97,6 @@ The service expects JSON messages in the RabbitMQ queue matching the `SendMailRe
     "contact_email": "support@myapp.com",
     "primary_color": "#4F46E5",
     "logo_url": "https://myapp.com/logo.png"
-  },
-  "email_content": {
-    "language": "en",
-    "welcome_title": "Welcome aboard!"
   }
 }
 ```

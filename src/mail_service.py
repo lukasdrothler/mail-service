@@ -83,46 +83,63 @@ class MailService:
 
     def load_template(self, template_name: str) -> Optional[str]:
         """Load an HTML template file"""
+        # Check custom directory first
         if "EMAIL_TEMPLATES_DIR" in os.environ:
-            _templates_dir = os.environ["EMAIL_TEMPLATES_DIR"]
-            logger.info(f"Using email templates directory '{_templates_dir}' from environment variable 'EMAIL_TEMPLATES_DIR'")
-        else:
-            _templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-            logger.info(f"Using default email templates directory since 'EMAIL_TEMPLATES_DIR' not set")
+            custom_dir = os.environ["EMAIL_TEMPLATES_DIR"]
+            custom_path = os.path.join(custom_dir, f"{template_name}.html")
+            if os.path.exists(custom_path):
+                logger.info(f"Using custom email template: {custom_path}")
+                try:
+                    with open(custom_path, 'r', encoding='utf-8') as f:
+                        return f.read()
+                except Exception as e:
+                    logger.error(f"Failed to load custom template {custom_path}: {e}")
         
-        template_path = os.path.join(_templates_dir, f"{template_name}.html")
-        if not os.path.exists(template_path):
+        # Default directory
+        default_dir = os.path.join(os.path.dirname(__file__), "templates")
+        default_path = os.path.join(default_dir, f"{template_name}.html")
+        
+        if not os.path.exists(default_path):
             logger.warning(f"Template not found: {template_name}")
             return None
 
         try:
-            with open(template_path, 'r', encoding='utf-8') as f:
+            with open(default_path, 'r', encoding='utf-8') as f:
                 template_content = f.read()
-            logger.info(f"Loaded email template: {template_path}")
+            logger.info(f"Loaded default email template: {default_path}")
             return template_content
         except Exception as e:
-            logger.error(f"Failed to load template {template_path}: {e}")
+            logger.error(f"Failed to load template {default_path}: {e}")
             return None
 
 
     def load_template_defaults(self, template_name: str) -> Dict[str, Any]:
         """Load default content from JSON file"""
-        if "EMAIL_TEMPLATES_DIR" in os.environ:
-            _templates_dir = os.environ["EMAIL_TEMPLATES_DIR"]
-        else:
-            _templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+        default_dir = os.path.join(os.path.dirname(__file__), "templates")
+        default_json_path = os.path.join(default_dir, f"{template_name}.json")
         
-        json_path = os.path.join(_templates_dir, f"{template_name}.json")
-        if not os.path.exists(json_path):
-            logger.warning(f"Template defaults not found: {template_name}")
-            return {}
-
-        try:
-            with open(json_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load template defaults {json_path}: {e}")
-            return {}
+        defaults = {}
+        if os.path.exists(default_json_path):
+            try:
+                with open(default_json_path, 'r', encoding='utf-8') as f:
+                    defaults = json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load default template defaults {default_json_path}: {e}")
+        
+        # Check custom directory and merge
+        if "EMAIL_TEMPLATES_DIR" in os.environ:
+            custom_dir = os.environ["EMAIL_TEMPLATES_DIR"]
+            custom_json_path = os.path.join(custom_dir, f"{template_name}.json")
+            if os.path.exists(custom_json_path):
+                try:
+                    with open(custom_json_path, 'r', encoding='utf-8') as f:
+                        custom_defaults = json.load(f)
+                        defaults.update(custom_defaults)
+                        logger.info(f"Merged custom template defaults from {custom_json_path}")
+                except Exception as e:
+                    logger.error(f"Failed to load custom template defaults {custom_json_path}: {e}")
+        
+        return defaults
 
 
     def render_template(
@@ -239,7 +256,6 @@ class MailService:
         # Merge defaults with request content and dynamic variables
         variables = {
             **defaults,
-            **request.email_content,
             "username": request.username,
             "verification_code": request.verification_code
         }
@@ -260,7 +276,6 @@ class MailService:
         # Merge defaults with request content and dynamic variables
         variables = {
             **defaults,
-            **request.email_content,
             "username": request.username,
             "verification_code": request.verification_code
         }
@@ -280,7 +295,6 @@ class MailService:
         # Merge defaults with request content and dynamic variables
         variables = {
             **defaults,
-            **request.email_content,
             "username": request.username,
             "verification_code": request.verification_code
         }
