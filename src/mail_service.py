@@ -204,6 +204,12 @@ class MailService:
             template_content=template_content,
             variables=variables
         )
+
+        if "subject" in variables:
+            if '{' in variables["subject"]:
+                subject = self.process_variable_references(
+                    variables
+                )["subject"]
         
         # Create multipart message
         msg = MIMEMultipart('alternative')
