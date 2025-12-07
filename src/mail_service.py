@@ -113,16 +113,16 @@ class MailService:
             return None
 
 
-    def load_template_defaults(self, template_name: str) -> Dict[str, Any]:
+    def load_template_values(self, template_name: str) -> Dict[str, Any]:
         """Load default content from JSON file"""
         default_dir = os.path.join(os.path.dirname(__file__), "templates")
         default_json_path = os.path.join(default_dir, f"{template_name}.json")
         
-        defaults = {}
+        values = {}
         if os.path.exists(default_json_path):
             try:
                 with open(default_json_path, 'r', encoding='utf-8') as f:
-                    defaults = json.load(f)
+                    values = json.load(f)
             except Exception as e:
                 logger.error(f"Failed to load default template defaults {default_json_path}: {e}")
         
@@ -133,13 +133,13 @@ class MailService:
             if os.path.exists(custom_json_path):
                 try:
                     with open(custom_json_path, 'r', encoding='utf-8') as f:
-                        custom_defaults = json.load(f)
-                        defaults.update(custom_defaults)
+                        custom_values = json.load(f)
+                        values.update(custom_values)
                         logger.info(f"Merged custom template defaults from {custom_json_path}")
                 except Exception as e:
                     logger.error(f"Failed to load custom template defaults {custom_json_path}: {e}")
         
-        return defaults
+        return values
 
 
     def render_template(
@@ -251,11 +251,11 @@ class MailService:
 
     def send_email_verification_mail(self, request: SendMailRequest):
         """Send email verification mail"""
-        defaults = self.load_template_defaults(TemplateName.EMAIL_VERIFICATION)
+        values = self.load_template_values(TemplateName.EMAIL_VERIFICATION)
 
         # Merge defaults with request content and dynamic variables
         variables = {
-            **defaults,
+            **values,
             "username": request.username,
             "verification_code": request.verification_code
         }
@@ -271,11 +271,11 @@ class MailService:
 
     def send_email_change_verification_mail(self, request: SendMailRequest):
         """Send email change verification mail"""
-        defaults = self.load_template_defaults(TemplateName.EMAIL_CHANGE_VERIFICATION)
+        values = self.load_template_values(TemplateName.EMAIL_CHANGE_VERIFICATION)
 
         # Merge defaults with request content and dynamic variables
         variables = {
-            **defaults,
+            **values,
             "username": request.username,
             "verification_code": request.verification_code
         }
@@ -290,11 +290,11 @@ class MailService:
 
     def send_forgot_password_verification_mail(self, request: SendMailRequest):
         """Send forgot password verification mail"""
-        defaults = self.load_template_defaults(TemplateName.FORGOT_PASSWORD_VERIFICATION)
+        values = self.load_template_values(TemplateName.FORGOT_PASSWORD_VERIFICATION)
 
         # Merge defaults with request content and dynamic variables
         variables = {
-            **defaults,
+            **values,
             "username": request.username,
             "verification_code": request.verification_code
         }

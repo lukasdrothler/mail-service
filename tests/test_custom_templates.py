@@ -38,7 +38,7 @@ def test_load_custom_html_template(custom_templates_dir):
     finally:
         del os.environ["EMAIL_TEMPLATES_DIR"]
 
-def test_load_custom_json_defaults_merge(custom_templates_dir):
+def test_load_custom_json_values_merge(custom_templates_dir):
     # Create a custom JSON default file
     template_name = "email_verification" # Use an existing template name to test merging
     custom_defaults = {
@@ -53,7 +53,7 @@ def test_load_custom_json_defaults_merge(custom_templates_dir):
     
     try:
         service = MailService()
-        defaults = service.load_template_defaults(template_name)
+        defaults = service.load_template_values(template_name)
         
         # Check if custom values are present
         assert defaults["welcome_title"] == "Custom Welcome Title"
