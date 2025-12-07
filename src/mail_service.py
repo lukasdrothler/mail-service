@@ -4,8 +4,9 @@ from typing import Dict, Any, Optional
 import logging
 import os
 import smtplib
+import json
 
-from src.basemodels import SendMailRequest, TemplateName, BrandingConfig, EmailChangeVerificationContent, ForgotPasswordVerificationContent, EmailVerificationContent
+from src.basemodels import SendMailRequest, TemplateName, BrandingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,26 @@ class MailService:
         except Exception as e:
             logger.error(f"Failed to load template {template_path}: {e}")
             return None
+
+
+    def load_template_defaults(self, template_name: str) -> Dict[str, Any]:
+        """Load default content from JSON file"""
+        if "EMAIL_TEMPLATES_DIR" in os.environ:
+            _templates_dir = os.environ["EMAIL_TEMPLATES_DIR"]
+        else:
+            _templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+        
+        json_path = os.path.join(_templates_dir, f"{template_name}.json")
+        if not os.path.exists(json_path):
+            logger.warning(f"Template defaults not found: {template_name}")
+            return {}
+
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load template defaults {json_path}: {e}")
+            return {}
 
 
     def render_template(
@@ -213,11 +234,12 @@ class MailService:
 
     def send_email_verification_mail(self, request: SendMailRequest):
         """Send email verification mail"""
-        template_variables = EmailVerificationContent(**request.email_content)
+        defaults = self.load_template_defaults(TemplateName.EMAIL_VERIFICATION)
 
-        # Convert BaseModel to dict and merge with dynamic variables
+        # Merge defaults with request content and dynamic variables
         variables = {
-            **template_variables.model_dump(),
+            **defaults,
+            **request.email_content,
             "username": request.username,
             "verification_code": request.verification_code
         }
@@ -233,11 +255,12 @@ class MailService:
 
     def send_email_change_verification_mail(self, request: SendMailRequest):
         """Send email change verification mail"""
-        template_variables = EmailChangeVerificationContent(**request.email_content)
+        defaults = self.load_template_defaults(TemplateName.EMAIL_CHANGE_VERIFICATION)
 
-        # Convert BaseModel to dict and merge with dynamic variables
+        # Merge defaults with request content and dynamic variables
         variables = {
-            **template_variables.model_dump(),
+            **defaults,
+            **request.email_content,
             "username": request.username,
             "verification_code": request.verification_code
         }
@@ -245,18 +268,19 @@ class MailService:
         self.send_email_html(
             template_name=TemplateName.EMAIL_CHANGE_VERIFICATION,
             variables=variables,
-            subject=template_variables.title or "Email Change Verification",
+            subject=variables.get("title", "Email Change Verification"),
             recipient=request.recipient,
             branding_config=request.branding_config
         )
 
     def send_forgot_password_verification_mail(self, request: SendMailRequest):
         """Send forgot password verification mail"""
-        template_variables = ForgotPasswordVerificationContent(**request.email_content)
+        defaults = self.load_template_defaults(TemplateName.FORGOT_PASSWORD_VERIFICATION)
 
-        # Convert BaseModel to dict and merge with dynamic variables
+        # Merge defaults with request content and dynamic variables
         variables = {
-            **template_variables.model_dump(),
+            **defaults,
+            **request.email_content,
             "username": request.username,
             "verification_code": request.verification_code
         }
@@ -264,7 +288,7 @@ class MailService:
         self.send_email_html(
             template_name=TemplateName.FORGOT_PASSWORD_VERIFICATION,
             variables=variables,
-            subject=template_variables.title or "Password Reset Request",
+            subject=variables.get("title", "Password Reset Request"),
             recipient=request.recipient,
             branding_config=request.branding_config
         )

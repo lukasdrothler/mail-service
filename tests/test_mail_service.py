@@ -1,5 +1,5 @@
 import pytest
-from src.basemodels import TemplateName, BrandingConfig, EmailVerificationContent, EmailChangeVerificationContent, ForgotPasswordVerificationContent
+from src.basemodels import TemplateName, BrandingConfig
 
 def test_process_variable_references(mail_service):
     # Test simple replacement
@@ -83,8 +83,7 @@ def test_render_email_verification_template(mail_service):
         contact_email="support@testapp.com"
     )
     
-    content_model = EmailVerificationContent()
-    variables = content_model.model_dump()
+    variables = mail_service.load_template_defaults(TemplateName.EMAIL_VERIFICATION)
     variables.update({
         "username": "NewUser",
         "verification_code": "123456"
@@ -112,8 +111,7 @@ def test_render_email_change_verification_template(mail_service):
         contact_email="support@testapp.com"
     )
     
-    content_model = EmailChangeVerificationContent()
-    variables = content_model.model_dump()
+    variables = mail_service.load_template_defaults(TemplateName.EMAIL_CHANGE_VERIFICATION)
     variables.update({
         "username": "ExistingUser",
         "verification_code": "654321"
@@ -141,8 +139,7 @@ def test_render_forgot_password_verification_template(mail_service):
         contact_email="support@testapp.com"
     )
     
-    content_model = ForgotPasswordVerificationContent()
-    variables = content_model.model_dump()
+    variables = mail_service.load_template_defaults(TemplateName.FORGOT_PASSWORD_VERIFICATION)
     variables.update({
         "username": "ForgotUser",
         "verification_code": "987654"

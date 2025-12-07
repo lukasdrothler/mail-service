@@ -3,7 +3,7 @@ import json
 import pika
 import threading
 import time
-from src.basemodels import BrandingConfig, EmailVerificationContent, EmailChangeVerificationContent, ForgotPasswordVerificationContent, TemplateName
+from src.basemodels import BrandingConfig, TemplateName
 
 def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     # Start consumer in a thread
@@ -30,14 +30,14 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     )
     
     # 1. Email Verification
-    content_ver = EmailVerificationContent(username="User1", verification_code="111111")
+    content_ver = {"username": "User1", "verification_code": "111111"}
     req_ver = {
         "template_name": TemplateName.EMAIL_VERIFICATION,
         "username": "User1",
         "verification_code": "111111",
         "recipient": "user1@example.com",
         "branding_config": branding_config.model_dump(),
-        "email_content": content_ver.model_dump()
+        "email_content": content_ver
     }
     channel.basic_publish(
         exchange='',
@@ -46,14 +46,14 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     )
     
     # 2. Email Change Verification
-    content_change = EmailChangeVerificationContent(username="User2", verification_code="222222")
+    content_change = {"username": "User2", "verification_code": "222222"}
     req_change = {
         "template_name": TemplateName.EMAIL_CHANGE_VERIFICATION,
         "username": "User2",
         "verification_code": "222222",
         "recipient": "user2@example.com",
         "branding_config": branding_config.model_dump(),
-        "email_content": content_change.model_dump()
+        "email_content": content_change
     }
     channel.basic_publish(
         exchange='',
@@ -62,14 +62,14 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     )
     
     # 3. Forgot Password Verification
-    content_forgot = ForgotPasswordVerificationContent(username="User3", verification_code="333333")
+    content_forgot = {"username": "User3", "verification_code": "333333"}
     req_forgot = {
         "template_name": TemplateName.FORGOT_PASSWORD_VERIFICATION,
         "username": "User3",
         "verification_code": "333333",
         "recipient": "user3@example.com",
         "branding_config": branding_config.model_dump(),
-        "email_content": content_forgot.model_dump()
+        "email_content": content_forgot
     }
     channel.basic_publish(
         exchange='',

@@ -1,0 +1,19 @@
+{
+    "language": "en",
+    "welcome_title": "Welcome {username}! 🎉",
+    "welcome_message": "Thanks for your interest in my app! I'm excited to have you on board. Please verify your email with the code below to unlock all the amazing features.",
+    "verification_code_label": "Your Verification Code",
+    "expiration_message": "This code will expire in 24 hours.",
+    "feature_preview_title": "🎯 What awaits you:",
+    "feature_1": "✨ Powerful tool designed for your success",
+    "feature_2": "🔐 Bank-level security for your peace of mind",
+    "feature_3": "📱 Seamless experience across all devices",
+    "feature_4": "🚀 Regular updates with new features",
+    "warning_title": "⚠️ Security Notice",
+    "warning_message": "Never share this code with anyone. We will never ask for your verification code.",
+    "wasnt_you_title": "Didn't sign up?",
+    "wasnt_you_message": "If you didn't create this account, no worries! Just ignore this email and nothing will happen.",
+    "excitement_message": "I can't wait for you to explore everything {app_name} has to offer. Let's get started!",
+    "support_message": "Need help? Contact us at {contact_email}",
+    "personal_note": "Thanks for being part of our community! 🎉"
+}

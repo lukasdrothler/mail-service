@@ -1,0 +1,14 @@
+{
+    "language": "en",
+    "title": "Email Change Verification",
+    "greeting": "Hello {username}!",
+    "main_message": "We received a request to change your email address. Please verify this change with the code below.",
+    "verification_code_label": "Your Verification Code",
+    "expiration_message": "This code will expire in 24 hours.",
+    "warning_title": "⚠️ Security Notice",
+    "warning_message": "Never share this code with anyone. We will never ask for your verification code.",
+    "wasnt_you_title": "Didn't request this?",
+    "wasnt_you_message": "If you didn't request this email change, please secure your account immediately and contact our support team.",
+    "support_message": "Need help? Contact us at {contact_email}",
+    "personal_note": "Thanks for being part of our community! 🎉"
+}
