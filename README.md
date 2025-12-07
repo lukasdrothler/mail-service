@@ -88,7 +88,7 @@ docker run --env-file .env mail-service
 
 ## Message Format
 
-The service expects JSON messages in the RabbitMQ queue matching the `SendMailRequest` schema.
+The service expects JSON messages in the RabbitMQ queue matching the `MailRequest` schema.
 
 **Example Payload:**
 

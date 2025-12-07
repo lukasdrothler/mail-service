@@ -6,7 +6,7 @@ import os
 import smtplib
 import json
 
-from src.basemodels import SendMailRequest, TemplateName
+from src.basemodels import MailRequest, TemplateName
 
 logger = logging.getLogger(__name__)
 
@@ -273,9 +273,13 @@ class MailService:
             raise
 
 
-    def send_email_verification_mail(self, request: SendMailRequest):
-        """Send email verification mail"""
-        values = self.load_template_values(TemplateName.EMAIL_VERIFICATION)
+    def send_code_mail(self, request: MailRequest, template_name: TemplateName):
+        """Send verification code mail"""
+        if not request.verification_code:
+            raise ValueError("Verification code is required for code mail")
+
+        # Load default template values
+        values = self.load_template_values(template_name)
 
         # Merge defaults with request content and dynamic variables
         variables = {
@@ -283,47 +287,34 @@ class MailService:
             "username": request.username,
             "verification_code": request.verification_code
         }
+
+        if "subject" not in variables:
+            variables["subject"] = f"Your code is {request.verification_code}"
         
         self.send_email_html(
-            template_name=TemplateName.EMAIL_VERIFICATION,
+            template_name=template_name,
             variables=variables,
-            subject=f"Dein Code lautet {request.verification_code}",
+            subject=variables["subject"],
             recipient=request.recipient
         )
 
+    def send_custom_template_mail(self, request: MailRequest, template_name: str):
+        """Send email using a custom template"""
+        # Load default template values
+        values = self.load_template_values(template_name)
 
-    def send_email_change_verification_mail(self, request: SendMailRequest):
-        """Send email change verification mail"""
-        values = self.load_template_values(TemplateName.EMAIL_CHANGE_VERIFICATION)
-
-        # Merge defaults with request content and dynamic variables
+        # Merge defaults with request content
         variables = {
             **values,
-            "username": request.username,
-            "verification_code": request.verification_code
+            "username": request.username
         }
-        
-        self.send_email_html(
-            template_name=TemplateName.EMAIL_CHANGE_VERIFICATION,
-            variables=variables,
-            subject=variables.get("title", "Email Change Verification"),
-            recipient=request.recipient
-        )
 
-    def send_forgot_password_verification_mail(self, request: SendMailRequest):
-        """Send forgot password verification mail"""
-        values = self.load_template_values(TemplateName.FORGOT_PASSWORD_VERIFICATION)
+        if "subject" not in variables:
+            variables["subject"] = f"Notification from {self.branding_config.get('app_name', 'our service')}"
 
-        # Merge defaults with request content and dynamic variables
-        variables = {
-            **values,
-            "username": request.username,
-            "verification_code": request.verification_code
-        }
-        
         self.send_email_html(
-            template_name=TemplateName.FORGOT_PASSWORD_VERIFICATION,
+            template_name=template_name,
             variables=variables,
-            subject=variables.get("title", "Password Reset Request"),
+            subject=variables["subject"],
             recipient=request.recipient
         )

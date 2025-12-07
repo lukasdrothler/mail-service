@@ -1,5 +1,6 @@
 {
     "language": "en",
+    "subject": "Your code is {verification_code}",
     "welcome_title": "Welcome {username}! 🎉",
     "welcome_message": "Thanks for your interest in my app! I'm excited to have you on board. Please verify your email with the code below to unlock all the amazing features.",
     "verification_code_label": "Your Verification Code",

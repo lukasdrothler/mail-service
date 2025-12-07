@@ -1,11 +1,11 @@
 from pydantic import BaseModel
+from typing import Optional
 
-class SendMailRequest(BaseModel):
+class MailRequest(BaseModel):
     template_name: str
     username: str
-    verification_code: str
     recipient: str
-
+    verification_code: Optional[str] = None
 
 class TemplateName():
     EMAIL_VERIFICATION = "email_verification"
