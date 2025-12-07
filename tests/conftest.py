@@ -12,7 +12,10 @@ def mail_service():
         "SMTP_SERVER": "localhost",
         "SMTP_PORT": "587",
         "SMTP_USER": "test_user",
-        "SMTP_PASSWORD": "test_password"
+        "SMTP_PASSWORD": "test_password",
+        "APP_NAME": "TestApp",
+        "APP_OWNER": "TestOwner",
+        "CONTACT_EMAIL": "test@example.com"
     })
     try:
         return MailService()

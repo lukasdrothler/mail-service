@@ -3,7 +3,7 @@ import json
 import pika
 import threading
 import time
-from src.basemodels import BrandingConfig, TemplateName
+from src.basemodels import TemplateName
 
 def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     # Start consumer in a thread
@@ -23,19 +23,12 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
     
-    branding_config = BrandingConfig(
-        app_name="TestApp",
-        app_owner="TestOwner",
-        contact_email="support@testapp.com"
-    )
-    
     # 1. Email Verification
     req_ver = {
         "template_name": TemplateName.EMAIL_VERIFICATION,
         "username": "User1",
         "verification_code": "111111",
-        "recipient": "user1@example.com",
-        "branding_config": branding_config.model_dump()
+        "recipient": "user1@example.com"
     }
     channel.basic_publish(
         exchange='',
@@ -48,8 +41,7 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
         "template_name": TemplateName.EMAIL_CHANGE_VERIFICATION,
         "username": "User2",
         "verification_code": "222222",
-        "recipient": "user2@example.com",
-        "branding_config": branding_config.model_dump()
+        "recipient": "user2@example.com"
     }
     channel.basic_publish(
         exchange='',
@@ -62,8 +54,7 @@ def test_consume_all_templates(rmq_consumer, rabbitmq_server):
         "template_name": TemplateName.FORGOT_PASSWORD_VERIFICATION,
         "username": "User3",
         "verification_code": "333333",
-        "recipient": "user3@example.com",
-        "branding_config": branding_config.model_dump()
+        "recipient": "user3@example.com"
     }
     channel.basic_publish(
         exchange='',

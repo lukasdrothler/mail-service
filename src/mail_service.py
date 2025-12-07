@@ -6,13 +6,14 @@ import os
 import smtplib
 import json
 
-from src.basemodels import SendMailRequest, TemplateName, BrandingConfig
+from src.basemodels import SendMailRequest, TemplateName
 
 logger = logging.getLogger(__name__)
 
 
 class MailService:
     def __init__(self):
+        # SMTP Configuration
         if "SMTP_SERVER" in os.environ:
             self.host = os.environ["SMTP_SERVER"]
             logger.info(f"Using SMTP server '{self.host}' from environment variable 'SMTP_SERVER'")
@@ -40,6 +41,31 @@ class MailService:
         else:
             logger.error("SMTP_PASSWORD environment variable not set, cannot send emails")
             raise ValueError("SMTP_PASSWORD environment variable is required for email sending")
+
+        # Branding Configuration
+        self.branding_config = {}
+        
+        if "APP_NAME" in os.environ:
+            self.branding_config["app_name"] = os.environ["APP_NAME"]
+        else:
+            raise ValueError("APP_NAME environment variable is required")
+
+        if "APP_OWNER" in os.environ:
+            self.branding_config["app_owner"] = os.environ["APP_OWNER"]
+        else:
+            raise ValueError("APP_OWNER environment variable is required")
+
+        if "CONTACT_EMAIL" in os.environ:
+            self.branding_config["contact_email"] = os.environ["CONTACT_EMAIL"]
+        else:
+            raise ValueError("CONTACT_EMAIL environment variable is required")
+
+        self.branding_config["logo_url"] = os.environ.get("LOGO_URL", "")
+        self.branding_config["primary_color"] = os.environ.get("PRIMARY_COLOR", "#000000")
+        self.branding_config["primary_shade_color"] = os.environ.get("PRIMARY_SHADE_COLOR", "#000000")
+        self.branding_config["primary_foreground_color"] = os.environ.get("PRIMARY_FOREGROUND_COLOR", "#ffffff")
+        
+        logger.info(f"Branding configuration loaded for app: {self.branding_config['app_name']}")
 
     
     def process_variable_references(self, variables: Dict[str, Any], max_iterations: int = 3, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -143,11 +169,11 @@ class MailService:
 
 
     def render_template(
-            self, template_content: str, variables: Dict[str, Any], branding_config: BrandingConfig
+            self, template_content: str, variables: Dict[str, Any]
             ) -> str:
         """Render template with variables and configuration"""
         # Merge config with variables (variables override config)
-        all_variables = {**branding_config.model_dump(), **variables}
+        all_variables = {**self.branding_config, **variables}
         
         # Process variable references within the merged variables (multiple passes if needed)
         all_variables = self.process_variable_references(all_variables)
@@ -164,8 +190,7 @@ class MailService:
                         template_name: str,
                         variables: Dict[str, Any],
                         subject: str,
-                        recipient: str,
-                        branding_config: BrandingConfig
+                        recipient: str
                         ) -> None:
         """Send email using template system"""
         
@@ -176,8 +201,7 @@ class MailService:
 
         html_content = self.render_template(
             template_content=template_content,
-            variables=variables,
-            branding_config=branding_config
+            variables=variables
         )
         
         # Create multipart message
@@ -264,8 +288,7 @@ class MailService:
             template_name=TemplateName.EMAIL_VERIFICATION,
             variables=variables,
             subject=f"Dein Code lautet {request.verification_code}",
-            recipient=request.recipient,
-            branding_config=request.branding_config
+            recipient=request.recipient
         )
 
 
@@ -284,8 +307,7 @@ class MailService:
             template_name=TemplateName.EMAIL_CHANGE_VERIFICATION,
             variables=variables,
             subject=variables.get("title", "Email Change Verification"),
-            recipient=request.recipient,
-            branding_config=request.branding_config
+            recipient=request.recipient
         )
 
     def send_forgot_password_verification_mail(self, request: SendMailRequest):
@@ -303,6 +325,5 @@ class MailService:
             template_name=TemplateName.FORGOT_PASSWORD_VERIFICATION,
             variables=variables,
             subject=variables.get("title", "Password Reset Request"),
-            recipient=request.recipient,
-            branding_config=request.branding_config
+            recipient=request.recipient
         )

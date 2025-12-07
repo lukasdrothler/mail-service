@@ -1,5 +1,5 @@
 import pytest
-from src.basemodels import TemplateName, BrandingConfig
+from src.basemodels import TemplateName
 
 def test_process_variable_references(mail_service):
     # Test simple replacement
@@ -44,13 +44,15 @@ def test_render_template(mail_service):
     variables = {
         "username": "TestUser"
     }
-    branding_config = BrandingConfig(
-        app_name="TestApp",
-        app_owner="Owner",
-        contact_email="test@example.com"
-    )
     
-    rendered = mail_service.render_template(template_content, variables, branding_config)
+    # Mock branding config in mail_service
+    mail_service.branding_config = {
+        "app_name": "TestApp",
+        "app_owner": "Owner",
+        "contact_email": "test@example.com"
+    }
+    
+    rendered = mail_service.render_template(template_content, variables)
     
     assert "Welcome to TestApp" in rendered
     assert "Hello TestUser" in rendered
@@ -61,13 +63,15 @@ def test_render_template_with_variable_references(mail_service):
         "username": "TestUser",
         "message": "Hello {username}, welcome to {app_name}"
     }
-    branding_config = BrandingConfig(
-        app_name="TestApp",
-        app_owner="Owner",
-        contact_email="test@example.com"
-    )
     
-    rendered = mail_service.render_template(template_content, variables, branding_config)
+    # Mock branding config in mail_service
+    mail_service.branding_config = {
+        "app_name": "TestApp",
+        "app_owner": "Owner",
+        "contact_email": "test@example.com"
+    }
+    
+    rendered = mail_service.render_template(template_content, variables)
     
     assert "Hello TestUser, welcome to TestApp" in rendered
 
@@ -76,12 +80,16 @@ def test_render_email_verification_template(mail_service):
     template_content = mail_service.load_template(TemplateName.EMAIL_VERIFICATION)
     assert template_content is not None
 
-    # Setup data
-    branding_config = BrandingConfig(
-        app_name="TestApp",
-        app_owner="TestOwner",
-        contact_email="support@testapp.com"
-    )
+    # Mock branding config in mail_service
+    mail_service.branding_config = {
+        "app_name": "TestApp",
+        "app_owner": "TestOwner",
+        "contact_email": "support@testapp.com",
+        "logo_url": "",
+        "primary_color": "#000000",
+        "primary_shade_color": "#000000",
+        "primary_foreground_color": "#ffffff"
+    }
     
     variables = mail_service.load_template_values(TemplateName.EMAIL_VERIFICATION)
     variables.update({
@@ -90,7 +98,7 @@ def test_render_email_verification_template(mail_service):
     })
 
     # Render
-    rendered = mail_service.render_template(template_content, variables, branding_config)
+    rendered = mail_service.render_template(template_content, variables)
 
     # Assertions
     assert "123456" in rendered
@@ -104,12 +112,16 @@ def test_render_email_change_verification_template(mail_service):
     template_content = mail_service.load_template(TemplateName.EMAIL_CHANGE_VERIFICATION)
     assert template_content is not None
 
-    # Setup data
-    branding_config = BrandingConfig(
-        app_name="TestApp",
-        app_owner="TestOwner",
-        contact_email="support@testapp.com"
-    )
+    # Mock branding config in mail_service
+    mail_service.branding_config = {
+        "app_name": "TestApp",
+        "app_owner": "TestOwner",
+        "contact_email": "support@testapp.com",
+        "logo_url": "",
+        "primary_color": "#000000",
+        "primary_shade_color": "#000000",
+        "primary_foreground_color": "#ffffff"
+    }
     
     variables = mail_service.load_template_values(TemplateName.EMAIL_CHANGE_VERIFICATION)
     variables.update({
@@ -118,7 +130,7 @@ def test_render_email_change_verification_template(mail_service):
     })
 
     # Render
-    rendered = mail_service.render_template(template_content, variables, branding_config)
+    rendered = mail_service.render_template(template_content, variables)
 
     # Assertions
     assert "654321" in rendered
@@ -132,12 +144,16 @@ def test_render_forgot_password_verification_template(mail_service):
     template_content = mail_service.load_template(TemplateName.FORGOT_PASSWORD_VERIFICATION)
     assert template_content is not None
 
-    # Setup data
-    branding_config = BrandingConfig(
-        app_name="TestApp",
-        app_owner="TestOwner",
-        contact_email="support@testapp.com"
-    )
+    # Mock branding config in mail_service
+    mail_service.branding_config = {
+        "app_name": "TestApp",
+        "app_owner": "TestOwner",
+        "contact_email": "support@testapp.com",
+        "logo_url": "",
+        "primary_color": "#000000",
+        "primary_shade_color": "#000000",
+        "primary_foreground_color": "#ffffff"
+    }
     
     variables = mail_service.load_template_values(TemplateName.FORGOT_PASSWORD_VERIFICATION)
     variables.update({
@@ -146,7 +162,7 @@ def test_render_forgot_password_verification_template(mail_service):
     })
 
     # Render
-    rendered = mail_service.render_template(template_content, variables, branding_config)
+    rendered = mail_service.render_template(template_content, variables)
 
     # Assertions
     assert "987654" in rendered
@@ -162,13 +178,15 @@ def test_render_template_missing_variables(mail_service):
         "username": "TestUser"
         # code is missing
     }
-    branding_config = BrandingConfig(
-        app_name="TestApp",
-        app_owner="Owner",
-        contact_email="test@example.com"
-    )
     
-    rendered = mail_service.render_template(template_content, variables, branding_config)
+    # Mock branding config in mail_service
+    mail_service.branding_config = {
+        "app_name": "TestApp",
+        "app_owner": "Owner",
+        "contact_email": "test@example.com"
+    }
+    
+    rendered = mail_service.render_template(template_content, variables)
     
     assert "Hello TestUser" in rendered
     assert "{{code}}" in rendered  # Should remain unrendered
@@ -190,17 +208,18 @@ def test_process_variable_references_circular(mail_service):
 
 def test_send_email_html_missing_template(mail_service):
     # Test sending email with non-existent template
-    branding_config = BrandingConfig(
-        app_name="TestApp",
-        app_owner="Owner",
-        contact_email="test@example.com"
-    )
+    
+    # Mock branding config in mail_service
+    mail_service.branding_config = {
+        "app_name": "TestApp",
+        "app_owner": "Owner",
+        "contact_email": "test@example.com"
+    }
     
     with pytest.raises(ValueError, match="Template 'non_existent_template' not found"):
         mail_service.send_email_html(
             template_name="non_existent_template",
             variables={},
             subject="Test",
-            recipient="test@example.com",
-            branding_config=branding_config
+            recipient="test@example.com"
         )

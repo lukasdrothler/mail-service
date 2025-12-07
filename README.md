@@ -61,6 +61,13 @@ The service is configured via environment variables. You can use a `.env` file i
 | `RABBITMQ_USERNAME` | RabbitMQ Username | **Required** |
 | `RABBITMQ_PASSWORD` | RabbitMQ Password | **Required** |
 | `EMAIL_TEMPLATES_DIR` | Custom path for templates | `src/templates` |
+| `APP_NAME` | Name of the application | **Required** |
+| `APP_OWNER` | Owner of the application | **Required** |
+| `CONTACT_EMAIL` | Contact email for support | **Required** |
+| `LOGO_URL` | URL to the application logo | `""` |
+| `PRIMARY_COLOR` | Primary brand color | `#000000` |
+| `PRIMARY_SHADE_COLOR` | Shade of primary color | `#000000` |
+| `PRIMARY_FOREGROUND_COLOR` | Foreground color on primary | `#ffffff` |
 
 ## Usage
 
@@ -90,14 +97,7 @@ The service expects JSON messages in the RabbitMQ queue matching the `SendMailRe
   "template_name": "email_verification",
   "username": "John Doe",
   "verification_code": "123456",
-  "recipient": "user@example.com",
-  "branding_config": {
-    "app_name": "MyApp",
-    "app_owner": "My Company",
-    "contact_email": "support@myapp.com",
-    "primary_color": "#4F46E5",
-    "logo_url": "https://myapp.com/logo.png"
-  }
+  "recipient": "user@example.com"
 }
 ```
 

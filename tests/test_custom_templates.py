@@ -13,6 +13,9 @@ def custom_templates_dir():
     # Set required env vars for MailService
     os.environ["SMTP_USER"] = "testuser"
     os.environ["SMTP_PASSWORD"] = "testpass"
+    os.environ["APP_NAME"] = "TestApp"
+    os.environ["APP_OWNER"] = "TestOwner"
+    os.environ["CONTACT_EMAIL"] = "test@example.com"
     
     yield temp_dir
     
@@ -20,6 +23,9 @@ def custom_templates_dir():
     shutil.rmtree(temp_dir)
     del os.environ["SMTP_USER"]
     del os.environ["SMTP_PASSWORD"]
+    del os.environ["APP_NAME"]
+    del os.environ["APP_OWNER"]
+    del os.environ["CONTACT_EMAIL"]
 
 def test_load_custom_html_template(custom_templates_dir):
     # Create a custom HTML template
