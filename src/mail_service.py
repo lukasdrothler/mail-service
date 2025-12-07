@@ -205,12 +205,6 @@ class MailService:
             variables=variables
         )
 
-        if "subject" in variables:
-            if '{' in variables["subject"]:
-                subject = self.process_variable_references(
-                    variables
-                )["subject"]
-        
         # Create multipart message
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
@@ -294,14 +288,11 @@ class MailService:
             "username": request.username,
             "verification_code": request.verification_code
         }
-
-        if "subject" not in variables:
-            variables["subject"] = f"Your code is {request.verification_code}"
         
         self.send_email_html(
             template_name=template_name,
             variables=variables,
-            subject=variables["subject"],
+            subject=f"Your code is {request.verification_code}",
             recipient=request.recipient
         )
 
@@ -316,12 +307,14 @@ class MailService:
             "username": request.username
         }
 
-        if "subject" not in variables:
-            variables["subject"] = f"Notification from {self.branding_config.get('app_name', 'our service')}"
+        if request.subject:
+            _subject = request.subject
+        else:
+            _subject = "No Subject"
 
         self.send_email_html(
             template_name=template_name,
             variables=variables,
-            subject=variables["subject"],
+            subject=_subject,
             recipient=request.recipient
         )

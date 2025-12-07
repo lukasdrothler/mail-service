@@ -6,6 +6,7 @@ class MailRequest(BaseModel):
     username: str
     recipient: str
     verification_code: Optional[str] = None
+    subject: Optional[str] = None
 
 class TemplateName():
     EMAIL_VERIFICATION = "email_verification"
