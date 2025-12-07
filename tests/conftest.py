@@ -18,7 +18,7 @@ def mail_service():
         "CONTACT_EMAIL": "test@example.com"
     })
     try:
-        return MailService()
+        return MailService(dry_run=True)
     finally:
         os.environ.clear()
         os.environ.update(old_environ)

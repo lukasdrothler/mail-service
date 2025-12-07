@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class MailService:
-    def __init__(self):
+    def __init__(self, dry_run: bool = False):
+        self.dry_run = dry_run
         # SMTP Configuration
         if "SMTP_SERVER" in os.environ:
             self.host = os.environ["SMTP_SERVER"]
