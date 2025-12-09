@@ -288,11 +288,15 @@ class MailService:
             "username": request.username,
             "verification_code": request.verification_code
         }
+
+        _subject = f"Your code is {request.verification_code}"
+        if variables.get("language", "") == "de":
+            _subject = f"Dein Code lautet {request.verification_code}"
         
         self.send_email_html(
             template_name=template_name,
             variables=variables,
-            subject=f"Your code is {request.verification_code}",
+            subject=_subject,
             recipient=request.recipient
         )
 
