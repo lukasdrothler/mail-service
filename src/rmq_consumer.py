@@ -114,7 +114,10 @@ class RabbitMQConsumer:
         try:
             self._channel.queue_declare(queue=dlq_name, durable=True)
             try:
-                self._channel.queue_bind(exchange=dlx_name, queue=dlq_name)
+                # Bind the DLQ to the DLX using the original queue name as the routing key.
+                # When RabbitMQ dead-letters a message it preserves the original routing_key,
+                # so binding with the mail queue name ensures the message is routed to the DLQ.
+                self._channel.queue_bind(exchange=dlx_name, queue=dlq_name, routing_key=self.mail_queue_name)
             except Exception as e:
                 logger.warning(f"Failed to bind DLQ '{dlq_name}' to DLX '{dlx_name}': {e}")
         except Exception as e:
