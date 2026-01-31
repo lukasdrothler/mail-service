@@ -47,32 +47,11 @@ class RabbitMQConsumer:
         self.mail_service = mail_service
         self.dry_run = dry_run
 
-        # Connect to RabbitMQ with retry logic
-        self._connection = self._connect_with_retry()
-
-        self._channel = self._connection.channel()
-        
-        # Setup Dead Letter Exchange (DLX) and Queue (DLQ)
-        dlx_name = f"{self.mail_queue_name}_dlx"
-        dlq_name = f"{self.mail_queue_name}_dlq"
-        
-        # Declare DLX (Fanout type broadcasts to all bound queues)
-        self._channel.exchange_declare(exchange=dlx_name, exchange_type='fanout', durable=True)
-        
-        # Declare DLQ
-        self._channel.queue_declare(queue=dlq_name, durable=True)
-        
-        # Bind DLQ to DLX
-        self._channel.queue_bind(exchange=dlx_name, queue=dlq_name)
-        
-        # Declare main queue with DLX configuration
-        # Messages rejected with requeue=False will be sent to the DLX
-        queue_args = {
-            'x-dead-letter-exchange': dlx_name
-        }
-        
-        self._channel.queue_declare(queue=self.mail_queue_name, durable=True, arguments=queue_args)
-        self._channel.basic_qos(prefetch_count=1)
+        # Defer connection and queue/exchange setup to `connect()` which
+        # performs safe declarations to avoid PRECONDITION_FAILED errors
+        self._connection = None
+        self._channel = None
+        self.connect()
 
     def start(self):
         self._channel.basic_consume(
@@ -113,6 +92,67 @@ class RabbitMQConsumer:
                 else:
                     logger.error(f"Failed to connect to RabbitMQ after {max_retries} attempts")
                     raise
+
+
+    def connect(self):
+        """Establish connection and channel and declare DLX/queue safely.
+        Avoid PRECONDITION_FAILED when a queue already exists with different arguments.
+        """
+        self._connection = self._connect_with_retry()
+        self._channel = self._connection.channel()
+
+        dlx_name = f"{self.mail_queue_name}_dlx"
+        dlq_name = f"{self.mail_queue_name}_dlq"
+
+        # Ensure the dead-letter-exchange exists.
+        try:
+            self._channel.exchange_declare(exchange=dlx_name, exchange_type='direct', durable=True)
+        except Exception as e:
+            logger.warning(f"Failed to declare DLX exchange '{dlx_name}': {e}")
+
+        # Ensure the DLQ exists and is bound to the DLX. Be tolerant of errors.
+        try:
+            self._channel.queue_declare(queue=dlq_name, durable=True)
+            try:
+                self._channel.queue_bind(exchange=dlx_name, queue=dlq_name)
+            except Exception as e:
+                logger.warning(f"Failed to bind DLQ '{dlq_name}' to DLX '{dlx_name}': {e}")
+        except Exception as e:
+            logger.warning(f"Failed to declare DLQ '{dlq_name}': {e}")
+
+        # If the queue already exists, declaring it with different arguments will
+        # raise PRECONDITION_FAILED. Use passive declare to detect existence: if
+        # the queue exists, skip (we cannot change its arguments); if it does not
+        # exist, create it with the DLX argument.
+        try:
+            self._channel.queue_declare(queue=self.mail_queue_name, passive=True)
+            logger.info(f"Queue '{self.mail_queue_name}' already exists, not modifying arguments.")
+        except pika.exceptions.ChannelClosedByBroker:
+            # Channel was closed because passive declare failed (queue not found).
+            # Reopen channel and declare the queue with DLX.
+            self._channel = self._connection.channel()
+            try:
+                self._channel.queue_declare(
+                    queue=self.mail_queue_name,
+                    durable=True,
+                    arguments={"x-dead-letter-exchange": dlx_name}
+                )
+                logger.info(f"Queue '{self.mail_queue_name}' created with DLX '{dlx_name}'.")
+            except Exception as e:
+                logger.error(f"Failed to declare queue '{self.mail_queue_name}': {e}")
+                raise
+        except Exception as e:
+            logger.error(f"Unexpected error while declaring queue '{self.mail_queue_name}': {e}")
+            raise
+
+        # QoS
+        try:
+            self._channel.basic_qos(prefetch_count=1)
+        except Exception:
+            # If channel was closed earlier and not reopened, try to reopen and set qos
+            if not (self._channel and getattr(self._channel, 'is_open', False)):
+                self._channel = self._connection.channel()
+            self._channel.basic_qos(prefetch_count=1)
 
 
     @staticmethod
