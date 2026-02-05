@@ -322,3 +322,16 @@ class MailService:
             subject=_subject,
             recipient=request.recipient
         )
+
+    def handle_request(self, request: MailRequest):
+        logger.info(f"Handling mail request for {request.recipient} using template {request.template_name}")
+        logger.info(f"Request details: {request}")
+
+        if request.template_name in [
+            TemplateName.EMAIL_VERIFICATION,
+            TemplateName.EMAIL_CHANGE_VERIFICATION,
+            TemplateName.FORGOT_PASSWORD_VERIFICATION
+        ]:
+            self.send_code_mail(request, request.template_name)
+        else:
+            self.send_custom_template_mail(request, request.template_name)

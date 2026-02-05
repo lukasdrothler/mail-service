@@ -171,26 +171,11 @@ class RabbitMQConsumer:
         return MailRequest(**data)
 
 
-    def handle_request(self, request: MailRequest):
-        # Placeholder for handling the mail sending logic
-        logger.info(f"Handling mail request for {request.recipient} using template {request.template_name}")
-        logger.info(f"Request details: {request}")
-
-        if request.template_name in [
-            TemplateName.EMAIL_VERIFICATION,
-            TemplateName.EMAIL_CHANGE_VERIFICATION,
-            TemplateName.FORGOT_PASSWORD_VERIFICATION
-        ]:
-            self.mail_service.send_code_mail(request, request.template_name)
-        else:
-            self.mail_service.send_custom_template_mail(request, request.template_name)
-
-
     def callback(self, ch, method, properties, body):
         try:
             logger.info(f"Received message: {method.delivery_tag}")
             request = self.request_json_to_dict(body)
-            self.handle_request(request)
+            self.mail_service.handle_request(request)
             ch.basic_ack(delivery_tag=method.delivery_tag)
             logger.info(f"Successfully processed message: {method.delivery_tag}")
         except Exception as e:
