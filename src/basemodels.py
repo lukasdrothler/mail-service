@@ -7,6 +7,7 @@ class MailRequest(BaseModel):
     recipient: str
     verification_code: Optional[str] = None
     subject: Optional[str] = None
+    language: Optional[str] = "en"
 
 # TODO: Implement notification mail to old email if email was changed
 class TemplateName():

@@ -223,3 +223,23 @@ def test_send_email_html_missing_template(mail_service):
             subject="Test",
             recipient="test@example.com"
         )
+
+def test_load_template_values_german(mail_service):
+    # Test loading German values
+    values = mail_service.load_template_values(TemplateName.EMAIL_VERIFICATION, language="de")
+    assert values["welcome_title"] == "Willkommen {username}! 🎉"
+    assert values["verification_code_label"] == "Dein Bestätigungscode"
+    assert values["language"] == "de"
+
+def test_load_template_values_fallback_language(mail_service):
+    # Test fallback to English when language is not found
+    values = mail_service.load_template_values(TemplateName.EMAIL_VERIFICATION, language="fr")
+    assert values["welcome_title"] == "Welcome {username}! 🎉"  # English fallback
+    assert values["verification_code_label"] == "Your Verification Code"
+    assert values["language"] == "fr"  # But language key should be what was requested (or maybe we should set it to actual loaded language? Implementation sets it to requested)
+
+def test_load_template_values_invalid_template(mail_service):
+    # Test loading a template that doesn't exist
+    values = mail_service.load_template_values("non_existent_template")
+    assert isinstance(values, dict)
+    assert values["language"] == "en" # Should contain at least language

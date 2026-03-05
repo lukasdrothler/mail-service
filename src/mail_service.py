@@ -108,7 +108,7 @@ class MailService:
         return processed_variables
 
 
-    def load_template(self, template_name: str) -> Optional[str]:
+    def load_template(self, template_name: TemplateName) -> Optional[str]:
         """Load an HTML template file"""
         # Check custom directory first
         if "EMAIL_TEMPLATES_DIR" in os.environ:
@@ -140,8 +140,8 @@ class MailService:
             return None
 
 
-    def load_template_values(self, template_name: str) -> Dict[str, Any]:
-        """Load default content from JSON file"""
+    def load_template_values(self, template_name: str, language: str = "en") -> Dict[str, Any]:
+        """Load default content from JSON file with language support"""
         default_dir = os.path.join(os.path.dirname(__file__), "templates")
         default_json_path = os.path.join(default_dir, f"{template_name}.json")
         
@@ -149,7 +149,22 @@ class MailService:
         if os.path.exists(default_json_path):
             try:
                 with open(default_json_path, 'r', encoding='utf-8') as f:
-                    values = json.load(f)
+                    all_values = json.load(f)
+                    
+                    if not isinstance(all_values, dict):
+                         logger.error(f"Template JSON {default_json_path} root is not a dictionary")
+                         all_values = {}
+
+                    if language in all_values:
+                        values = all_values[language]
+                    elif "en" in all_values:
+                        logger.warning(f"Language '{language}' not found in {template_name}.json. Falling back to 'en'.")
+                        values = all_values["en"]
+                    else:
+                        logger.warning(f"Neither language '{language}' nor 'en' found in {template_name}.json.")
+                        
+            except json.JSONDecodeError as e:
+                logger.error(f"Invalid JSON in default template defaults {default_json_path}: {e}")
             except Exception as e:
                 logger.error(f"Failed to load default template defaults {default_json_path}: {e}")
         
@@ -160,11 +175,28 @@ class MailService:
             if os.path.exists(custom_json_path):
                 try:
                     with open(custom_json_path, 'r', encoding='utf-8') as f:
-                        custom_values = json.load(f)
+                        custom_all_values = json.load(f)
+                        
+                        if not isinstance(custom_all_values, dict):
+                             logger.error(f"Custom template JSON {custom_json_path} root is not a dictionary")
+                             custom_all_values = {}
+
+                        custom_values = {}
+                        if language in custom_all_values:
+                            custom_values = custom_all_values[language]
+                        elif "en" in custom_all_values:
+                             logger.warning(f"Language '{language}' not found in custom {template_name}.json. Falling back to 'en'.")
+                             custom_values = custom_all_values["en"]
+                        
                         values.update(custom_values)
                         logger.info(f"Merged custom template defaults from {custom_json_path}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Invalid JSON in custom template defaults {custom_json_path}: {e}")
                 except Exception as e:
                     logger.error(f"Failed to load custom template defaults {custom_json_path}: {e}")
+        
+        # Ensure language is available for template rendering
+        values["language"] = language
         
         return values
 
@@ -188,7 +220,7 @@ class MailService:
 
 
     def send_email_html(self,
-                        template_name: str,
+                        template_name: TemplateName,
                         variables: Dict[str, Any],
                         subject: str,
                         recipient: str
@@ -280,7 +312,7 @@ class MailService:
             raise ValueError("Verification code is required for code mail")
 
         # Load default template values
-        values = self.load_template_values(template_name)
+        values = self.load_template_values(template_name, request.language)
 
         # Merge defaults with request content and dynamic variables
         variables = {
@@ -290,7 +322,7 @@ class MailService:
         }
 
         _subject = f"Your code is {request.verification_code}"
-        if variables.get("language", "") == "de":
+        if request.language == "de":
             _subject = f"Dein Code lautet {request.verification_code}"
         
         self.send_email_html(
@@ -300,10 +332,10 @@ class MailService:
             recipient=request.recipient
         )
 
-    def send_custom_template_mail(self, request: MailRequest, template_name: str):
+    def send_custom_template_mail(self, request: MailRequest, template_name: TemplateName):
         """Send email using a custom template"""
         # Load default template values
-        values = self.load_template_values(template_name)
+        values = self.load_template_values(template_name, request.language)
 
         # Merge defaults with request content
         variables = {
